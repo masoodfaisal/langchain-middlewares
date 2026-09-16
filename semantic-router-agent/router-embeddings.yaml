@@ -1,0 +1,116 @@
+# Standalone embedding-routing example for vllm-sr 0.3.0.
+version: v0.3
+
+listeners:
+  - name: music-agent
+    address: 0.0.0.0
+    port: 8899
+    timeout: 300s
+
+providers:
+  # Required by the router schema; classification-only requests never call
+  # these backends. LangChain uses MODEL_GATEWAY_BASE_URL for generation.
+  defaults:
+    default_model: gpt-5.4-mini
+  models:
+    - name: gpt-5.4-mini
+      backend_refs:
+        - name: model-gateway
+          provider: openai
+          base_url: http://unused.invalid/v1
+    - name: gpt-5.6-luna
+      backend_refs:
+        - name: model-gateway
+          provider: openai
+          base_url: http://unused.invalid/v1
+
+routing:
+  modelCards:
+    - name: gpt-5.4-mini
+      description: Efficient model for invoice lookups and ordinary tool use.
+    - name: gpt-5.6-luna
+      description: Capable model for comparing purchases and recommending music.
+
+  signals:
+    embeddings:
+      - name: invoice-lookup
+        # Starting similarity thresholds; tune against your demo prompts.
+        threshold: 0.7
+        aggregation_method: max
+        candidates:
+          - Show my current invoices.
+          - List my recent invoice dates and totals.
+          - Find my latest music-store receipt.
+          - Show the tracks on my latest invoice.
+      - name: purchase-recommendations
+        threshold: 0.7
+        aggregation_method: max
+        candidates:
+          - Compare available invoices for last three months and recommend the music based on those purchases.
+          - What should I listen to next based on my recent music purchases?
+          - Analyze my purchase history and suggest albums I have not bought.
+          - Compare the artists and genres I purchased and recommend similar music.
+
+  decisions:
+    - name: purchase-recommendations
+      description: Use the capable model for requests resembling purchase analysis.
+      priority: 100
+      rules:
+        operator: OR
+        conditions:
+          - type: embedding
+            name: purchase-recommendations
+      modelRefs:
+        - model: gpt-5.6-luna
+
+    - name: invoice-lookup
+      description: Use the efficient model for requests resembling invoice lookups.
+      priority: 90
+      rules:
+        operator: OR
+        conditions:
+          - type: embedding
+            name: invoice-lookup
+      modelRefs:
+        - model: gpt-5.4-mini
+
+    - name: default-efficient
+      description: Use the efficient model when no embedding signal matches.
+      priority: 1
+      rules:
+        operator: AND
+        conditions: []
+      modelRefs:
+        - model: gpt-5.4-mini
+
+global:
+  router:
+    auto_model_name: auto
+  # Keep customer-specific responses out of a shared semantic cache.
+  stores:
+    semantic_cache:
+      enabled: false
+  services:
+    response_api:
+      enabled: false
+    router_replay:
+      enabled: false
+    observability:
+      tracing:
+        enabled: false
+  model_catalog:
+    kbs: []
+    embeddings:
+      semantic:
+        # The supported v0.3.0 mmBERT predecessor; this model is not Vela.
+        mmbert_model_path: models/mmbert-embed-32k-2d-matryoshka
+        # mmbert_model_path: models/Vela-1.0-Encoder-307M-Embedding
+        use_cpu: true
+        embedding_config:
+          model_type: mmbert
+          backend: candle
+          target_dimension: 768
+          target_layer: 22
+          preload_embeddings: true
+          enable_soft_matching: false
+          top_k: 1

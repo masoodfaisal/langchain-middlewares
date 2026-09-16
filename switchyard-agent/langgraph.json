@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "switchyard-agent": "./switchyard-agent.py:graph"
+  },
+  "env": "../.env"
+}

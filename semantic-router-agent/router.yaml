@@ -1,0 +1,82 @@
+# Configuration for the published vllm-sr 0.3.0 Python package and runtime.
+version: v0.3
+
+listeners:
+  - name: music-agent
+    address: 0.0.0.0
+    port: 8899
+    timeout: 300s
+
+providers:
+  # Required by the router schema; classification-only requests never call
+  # these backends. LangChain uses MODEL_GATEWAY_BASE_URL for generation.
+  defaults:
+    default_model: gpt-5.4-mini
+  models:
+    - name: gpt-5.4-mini
+      backend_refs:
+        - name: model-gateway
+          provider: openai
+          base_url: http://unused.invalid/v1
+    - name: gpt-5.6-luna
+      backend_refs:
+        - name: model-gateway
+          provider: openai
+          base_url: http://unused.invalid/v1
+
+routing:
+  modelCards:
+    - name: gpt-5.4-mini
+      description: Efficient model for invoice lookups and ordinary tool use.
+    - name: gpt-5.6-luna
+      description: Capable model for comparing purchases and recommending music.
+
+  signals:
+    keywords:
+      - name: purchase-analysis
+        operator: OR
+        keywords: [compare, recommend, recommendation, recommendations, analyze, analyse]
+        case_sensitive: false
+
+  decisions:
+    - name: purchase-recommendations
+      description: Compare purchase history and recommend music with the capable model.
+      priority: 100
+      rules:
+        operator: OR
+        conditions:
+          - type: keyword
+            name: purchase-analysis
+      modelRefs:
+        - model: gpt-5.6-luna
+
+    - name: invoice-lookup
+      description: Use the efficient model for routine requests.
+      priority: 1
+      rules:
+        operator: AND
+        conditions: []
+      modelRefs:
+        - model: gpt-5.4-mini
+
+global:
+  router:
+    auto_model_name: auto
+  # Keep customer-specific responses out of a shared semantic cache.
+  stores:
+    semantic_cache:
+      enabled: false
+  services:
+    response_api:
+      enabled: false
+    router_replay:
+      enabled: false
+    observability:
+      tracing:
+        enabled: false
+  # Keyword routing does not need an embedding model.
+  model_catalog:
+    kbs: []
+    embeddings:
+      semantic:
+        mmbert_model_path: ""

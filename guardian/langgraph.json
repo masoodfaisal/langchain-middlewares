@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "guardian-demo-agent": "./guardian-demo-agent.py:graph"
+  },
+  "env": "../.env"
+}

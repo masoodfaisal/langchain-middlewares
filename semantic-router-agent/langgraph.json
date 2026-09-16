@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "semantic-router-agent": "./semantic-router-agent.py:graph"
+  },
+  "env": "../.env"
+}

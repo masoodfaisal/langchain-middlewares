@@ -1,0 +1,29 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Local configuration and runtime data
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+credentials.json
+.DS_Store
+.langgraph_api/
+
+# Semantic Router runtime artifacts and optional local sample database
+semantic-router-agent/.vllm-sr/
+semantic-router-agent/models/
+semantic-router-agent/chinook.db
+switchyard-agent/chinook.db
+
+.private
