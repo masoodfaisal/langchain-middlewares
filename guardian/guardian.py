@@ -12,6 +12,7 @@ import httpx
 from langchain.agents.middleware import AgentMiddleware, AgentState
 from langchain.agents.middleware.types import PrivateStateAttr
 from langchain.messages import HumanMessage, ToolMessage
+from langsmith import get_current_run_tree
 from regopy import Interpreter, LogLevel
 
 from tools import preference_namespace
@@ -130,6 +131,8 @@ class MemoryGuardian(AgentMiddleware):
 
         if allowed is True:
             return await handler(request)
+        if run := get_current_run_tree():
+            run.add_metadata({"guardian_blocked": reason})
         return ToolMessage(
             content=f"Memory action blocked: {reason}",
             tool_call_id=call["id"],
