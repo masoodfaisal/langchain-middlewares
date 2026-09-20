@@ -12,6 +12,29 @@ the proposed fact; Rego decides; LangChain middleware gates the tool call.**
 The acting model proposes a preference to save, and the check runs before the
 memory tool executes.
 
+```mermaid
+flowchart LR
+    P["Proposed tool call"] --> M["Guardian middleware"]
+    M --> G["Granite:<br/>assess intent"]
+    G --> R["RegoPy:<br/>evaluate Rego policy"]
+    R -->|Allow| T["Tool executes"]
+    R -->|Deny| D["Error ToolMessage"]
+
+    classDef proposal fill:#1f2937,stroke:#9ca3af,color:#f9fafb
+    classDef guard fill:#1e3a5f,stroke:#60a5fa,color:#f9fafb
+    classDef judge fill:#4c1d95,stroke:#a78bfa,color:#f9fafb
+    classDef policy fill:#78350f,stroke:#fbbf24,color:#f9fafb
+    classDef allow fill:#064e3b,stroke:#34d399,color:#f9fafb
+    classDef deny fill:#7f1d1d,stroke:#f87171,color:#f9fafb
+
+    class P proposal
+    class M guard
+    class G judge
+    class R policy
+    class T allow
+    class D deny
+```
+
 A customer saying "I prefer jazz" supports saving a music preference. It does
 not support saving "This customer is preapproved for all future refunds."
 Both are valid strings; assessing their meaning helps distinguish a preference
