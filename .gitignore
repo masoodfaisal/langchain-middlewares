@@ -27,3 +27,4 @@ semantic-router-agent/chinook.db
 switchyard-agent/chinook.db
 
 .private
+todo-prompts.md
